@@ -7,8 +7,9 @@ namespace VSAC;
  */
 
 //----------------------------------------------------------------------------//
-//-- Implementation                                                         --//
+//-- Module required functions                                              --//
 //----------------------------------------------------------------------------//
+
 
 /** @see example_module_dependencies() */
 function emailer_noop_depends()
@@ -29,14 +30,45 @@ function emailer_noop_config_items()
     return array();
 }
 
-/** @see emailer_send_single */
-function emailer_noop_send_single($to, $subject, $html, $text, array $merge_vars)
+//----------------------------------------------------------------------------//
+//-- Implementation                                                         --//
+//----------------------------------------------------------------------------//
+
+
+/** @see emailer_force_test_conf */
+function emailer_noop_force_test_conf()
 {
+    return false;
+}
+
+/** @see emailer_format_attachments */
+function emailer_noop_format_attachments($attachments)
+{
+    return $attachments;
+}
+
+/** @see emailer_send_single */
+function emailer_noop_send_single(
+    $to,
+    $subject,
+    $html,
+    $text,
+    array $merge_vars,
+    array $attachments
+){
+    return true;
 }
 
 
 /** @see emailer_send_batch */
-function emailer_noop_send_batch($to, $subject, $html, $text = '', array $merge_vars = array())
-{
+function emailer_noop_send_batch(
+    $to,
+    $subject,
+    $html,
+    $text = '',
+    array $merge_vars,
+    array $attachments
+) {
+    return array('count' => count($to), 'errors' => array());
 }
 

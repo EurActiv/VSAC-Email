@@ -38,12 +38,6 @@ $result = json_decode(file_get_contents($url), true);
 </pre>
 <p><code>$result</code> now contains:</p>
 <pre><?php var_export($result_formatted) ?></pre>
-<hr>
-<p>The full HTML body:</p>
-<?php echo $result['data']['html'] ?>
-
-<p>The full text body:</p>
-<pre><?php echo $result['data']['text'] ?></pre>
 
 <?php
 

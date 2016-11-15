@@ -22,10 +22,10 @@ namespace VSAC;
     $html_url = router_add_query($json_url, ['format' => 'html']);
     $text_url = router_add_query($json_url, ['format' => 'text']);
     ?><hr><p>See how it works on an example:
-        <a href="<?= $raw_url ?>">Raw (Unprocessed) HTML</a> |
-        <a href="<?= $json_url ?>">Full JSON response</a> |
-        <a href="<?= $html_url ?>">Email HTML</a> |
-        <a href="<?= $text_url ?>">Email Text</a>
+        <a href="<?= $raw_url  ?>" target="_blank">Raw (Unprocessed) HTML</a> |
+        <a href="<?= $json_url ?>" target="_blank">Full JSON response</a> |
+        <a href="<?= $html_url ?>" target="_blank">Email HTML</a> |
+        <a href="<?= $text_url ?>" target="_blank">Email Text</a>
     </p><hr><?php
 
 } ?>

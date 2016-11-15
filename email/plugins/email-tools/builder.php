@@ -264,62 +264,81 @@ foreach ($styles as $mq => &$ruleset) {
 }
 unset($ruleset);
 
+//-- Convert style rules to an ID by ID ruleset ------------------------------//
+$styles_by_id = array();
+foreach ($styles['all'] as $selector => $declarations) {
+    domtools_loop(
+        $selector,
+        function ($el) use ($declarations, &$styles_by_id) {
+            $id = $el->getAttribute('id');
+            if (!$id) {
+                $id = 'vsac_tmp_' . uniqid();
+                $el->setAttribute('id', $id);
+            }
+            if (empty($styles_by_id[$id])) {
+                $styles_by_id[$id] = array();
+            }
+            $styles_by_id[$id] = array_merge($styles_by_id[$id], $declarations);
+        }
+    );
+}
+unset($styles['all']);
 
-//-- Apply styles that should be attributes ----------------------------------//
-
+//-- Mapping for styles that should be attributes ----------------------------//
 $style_attrs = array (
-  'body.background-color'   => 'bgcolor',
-  'div.text-align'          => 'align',
-  'h1.text-align'           => 'align',
-  'h2.text-align'           => 'align',
-  'h3.text-align'           => 'align',
-  'h4.text-align'           => 'align',
-  'h5.text-align'           => 'align',
-  'h6.text-align'           => 'align',
-  'img.height'              => 'height',
-  'img.width'               => 'width',
-  'p.text-align'            => 'align',
-  'table.background-color'  => 'bgcolor',
-  'table.border-collapse'   => 'border',
-  'table.border-padding'    => 'cellpadding',
-  'table.border-spacing'    => 'cellspacing',
-  'table.text-align'        => 'align',
-  'table.width'             => 'width',
-  'td.background-color'     => 'bgcolor',
-  'td.height'               => 'height',
-  'td.text-align'           => 'align',
-  'td.vertical-align'       => 'valign',
-  'td.width'                => 'width',
-  'th.background-color'     => 'bgcolor',
-  'th.height'               => 'height',
-  'th.text-align'           => 'align',
-  'th.vertical-align'       => 'valign',
-  'th.width'                => 'width',
-  'tr.background-color'     => 'bgcolor',
-  'tr.text-align'           => 'align',
-
-  'th.padding-top'          => 'td_error',
-  'th.padding-right'        => 'td_error',
-  'th.padding-bottom'       => 'td_error',
-  'th.padding-left'         => 'td_error',
-  'th.margin-top'           => 'td_error',
-  'th.margin-right'         => 'td_error',
-  'th.margin-bottom'        => 'td_error',
-  'th.margin-left'          => 'td_error',
-  'td.padding-top'          => 'td_error',
-  'td.padding-right'        => 'td_error',
-  'td.padding-bottom'       => 'td_error',
-  'td.padding-left'         => 'td_error',
-  'td.margin-top'           => 'td_error',
-  'td.margin-right'         => 'td_error',
-  'td.margin-bottom'        => 'td_error',
-  'td.margin-left'          => 'td_error',
-
+    'body.background-color'   => 'bgcolor',
+    'div.text-align'          => 'align',
+    'h1.text-align'           => 'align',
+    'h2.text-align'           => 'align',
+    'h3.text-align'           => 'align',
+    'h4.text-align'           => 'align',
+    'h5.text-align'           => 'align',
+    'h6.text-align'           => 'align',
+    'img.height'              => 'height',
+    'img.width'               => 'width',
+    'p.text-align'            => 'align',
+    'table.background-color'  => 'bgcolor',
+    'table.border-collapse'   => 'border',
+    'table.border-padding'    => 'cellpadding',
+    'table.border-spacing'    => 'cellspacing',
+    'table.text-align'        => 'align',
+    'table.width'             => 'width',
+    'td.background-color'     => 'bgcolor',
+    'td.height'               => 'height',
+    'td.text-align'           => 'align',
+    'td.vertical-align'       => 'valign',
+    'td.width'                => 'width',
+    'th.background-color'     => 'bgcolor',
+    'th.height'               => 'height',
+    'th.text-align'           => 'align',
+    'th.vertical-align'       => 'valign',
+    'th.width'                => 'width',
+    'tr.background-color'     => 'bgcolor',
+    'tr.text-align'           => 'align',
+    'th.padding-top'          => 'td_error',
+    'th.padding-right'        => 'td_error',
+    'th.padding-bottom'       => 'td_error',
+    'th.padding-left'         => 'td_error',
+    'th.margin-top'           => 'td_error',
+    'th.margin-right'         => 'td_error',
+    'th.margin-bottom'        => 'td_error',
+    'th.margin-left'          => 'td_error',
+    'td.padding-top'          => 'td_error',
+    'td.padding-right'        => 'td_error',
+    'td.padding-bottom'       => 'td_error',
+    'td.padding-left'         => 'td_error',
+    'td.margin-top'           => 'td_error',
+    'td.margin-right'         => 'td_error',
+    'td.margin-bottom'        => 'td_error',
+    'td.margin-left'          => 'td_error',
 );
 
 $pxm = function ($v) {
     if (is_numeric($v) || substr($v, -2) == 'px') {
         return intval($v);
+    }
+    if (substr($v, -1) == '%') {
+        return $v;
     }
 };
 $style_attr_transformers = array(
@@ -332,66 +351,100 @@ $style_attr_transformers = array(
     'cellpadding' => $pxm,
     'valign'      => function ($v) { return $v; },
     'td_error'    => function ($v) {
-                        email_tools_warn('Padding and margin on table cells is
-                                not safe in email. Either set the cellpadding
-                                property or use the custom ".border-padding" css
-                                attribute on the table instead.');
+                        if ($v) { // don't warn if it's set to zero
+                            $msg = 'Padding and margin on table cells is not
+                                    safe in email. Either set the cellpadding
+                                    property or use the custom ".border-padding"
+                                    css attribute on the table instead.';
+                            email_tools_warn($msg);
+                        }
                         return null;
                      } 
 );
 
-foreach ($styles['all'] as $selector => &$declarations) {
-    $unset = array();
-    domtools_loop(
-        $selector,
-        function ($el) use ($declarations, &$unset, $style_attrs, $style_attr_transformers) {
-            $name = strtolower($el->tagName);
-            foreach ($declarations as $prop => $val) {
-                if (isset($style_attrs[$name . '.' . $prop])) {
-                    $attr = $style_attrs[$name . '.' . $prop];
-                    $transformer = $style_attr_transformers[$attr];
-                    if (null !== ($val = $transformer($val))) {
-                        $el->setAttribute($attr, $val);
-                        $unset[] = $prop;
-                    }
-                }
-            }
+//-- Apply inline styles -----------------------------------------------------//
+
+// closure to avoid stepping on variable names
+call_user_func(function () use ($styles_by_id, $style_attrs, $style_attr_transformers) {
+    foreach ($styles_by_id as $id => $declarations) {
+        $els = domtools_query('#' . $id);
+        if (!($el = array_shift($els))) {
+            continue;
         }
-    );
-    foreach($unset as $prop) {
-        unset($declarations[$prop]);
-    }
-}
-unset($declarations);
-
-
-//-- Insert styles that need to go into the "style" attribute ----------------//
-
-// insert
-foreach ($styles['all'] as $selector => $declarations) {
-    $decls = '';
-    foreach ($declarations as $property => $value) {
-        $decls .= $property . ': ' . $value . ';';
-    }
-    domtools_loop($selector, function ($el) use ($decls) {
-        $style = trim($el->getAttribute('style'));
+        $name = strtolower($el->tagName);
+        // styles that should be attributes
+        foreach ($declarations as $prop => $val) {
+            $style_attr_key = $name . '.' . $prop;
+            if (!isset($style_attrs[$style_attr_key])) {
+                continue;
+            }
+            $style_attr = $style_attrs[$style_attr_key];
+            $transformer = $style_attr_transformers[$style_attr];
+            if (null !== ($val = $transformer($val))) {
+                $el->setAttribute($style_attr, $val);
+            }
+            unset($declarations[$prop]);
+        }
+        $style = $el->getAttribute('style');
         if ($style && substr($style, -1) != ';') {
             $style .= ';';
         }
-        $el->setAttribute('style', $style . $decls);
-    });
-}
-// and minify
-domtools_loop('//*[@style]', function ($el) {
-    $style = $el->getAttribute('style');
-    $style = csstoolsexp_parse_declaration_string($style);
-    $style = csstoolsexp_declarations_join($style);
-    $el->setAttribute('style', $style);    
+        foreach ($declarations as $prop => $val) {
+            $style .= $prop . ':' . $val . ';';
+        }
+        if ($style) {
+            $el->setAttribute('style', $style);
+        }
+    }
 });
+
+
+//-- minify ------------------------------------------------------------------//
+
+// closure to avoid stepping on variable names
+call_user_func(function () use ($styles) {
+    foreach ($styles as $mq => $declarations) {
+        foreach (array_keys($declarations) as $selector) {
+            domtools_loop($selector, function ($el) {
+                $classes = array_filter(explode(' ', $el->getAttribute('class')));
+                $classes[] = 'vsac-tmp-preserve';
+                $el->setAttribute('class', implode(' ', $classes));
+            });
+        }
+    }
+    domtools_loop('//*[@id]', function ($el) {
+        $id = $el->getAttribute('id');
+        $classes = array_filter(explode(' ', $el->getAttribute('class')));
+        $preserve = in_array('vsac-tmp-preserve', $classes);
+        if ($id && (!$preserve || strpos($id, 'vsac_tmp_') === 0)) {
+            $el->removeAttribute('id');
+        }
+    });
+    domtools_loop('//*[@class]', function ($el) {
+        $classes = array_filter(explode(' ', $el->getAttribute('class')));
+        $preserve = array_search('vsac-tmp-preserve', $classes);
+        if ($preserve === false) {
+            $el->removeAttribute('class');
+        } else {
+            unset($classes[$preserve]);
+            $el->setAttribute('class', implode(' ', $classes));
+        }
+    });
+    
+    domtools_loop('//*[@style]', function ($el) {
+        $style = $el->getAttribute('style');
+        $style = csstoolsexp_parse_declaration_string($style);
+        $style = csstoolsexp_declarations_join($style);
+        $el->setAttribute('style', $style);    
+    });
+    domtools_remove_elements('//comment()');
+    domtools_remove_elements('//script');
+});
+
+
 
 //-- Insert head style -------------------------------------------------------//
 
-unset($styles['all']);
 
 $head_styles = csstoolsexp_array_to_css($styles);
 $head = domtools_query('//head')[0];
@@ -413,13 +466,12 @@ domtools_loop('a[href^="tel"],a[href^="sms"]', function ($el) {
 domtools_loop('h1 a, h2 a, h3 a, h4 a, h5 a, h6 a', function ($el) {
     if ($style = $el->getAttribute('style')) {
         $style = preg_replace('/(color:\([^;]+\));/', '$1 !important;', $style);
-        $el->setAttribute($style);
+        $el->setAttribute('style', $style);
     }
 });
 
 //-- Format content for email delivery ---------------------------------------//
-domtools_remove_elements('//comment()');
-domtools_remove_elements('//script');
+
 
 // this is a bug in domtools, where merge variables in urls get rebased and
 // urlencoded fix it here.
