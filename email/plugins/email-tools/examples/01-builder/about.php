@@ -9,26 +9,7 @@ namespace VSAC;
     to send as an HTML body.  It will generate both a rich text body and an
     alternate text body.</p>
 <?= backend_code(router_plugin_url('builder.php')) ?>
-<?php if (auth_is_authenticated()) {
 
-    $raw_url = router_plugin_url(__DIR__ . '/email.html', true);
-    $json_url = router_add_query(
-        router_plugin_url('builder.php'),
-        array(
-            'api_key' => config('api_key', ''),
-            'source'  => $raw_url,
-        )
-    );
-    $html_url = router_add_query($json_url, ['format' => 'html']);
-    $text_url = router_add_query($json_url, ['format' => 'text']);
-    ?><hr><p>See how it works on an example:
-        <a href="<?= $raw_url  ?>" target="_blank">Raw (Unprocessed) HTML</a> |
-        <a href="<?= $json_url ?>" target="_blank">Full JSON response</a> |
-        <a href="<?= $html_url ?>" target="_blank">Email HTML</a> |
-        <a href="<?= $text_url ?>" target="_blank">Email Text</a>
-    </p><hr><?php
-
-} ?>
 <table class="table table-bordered">
     <tr><th>Parameter</th><th>Type</th><th>Value</th></tr>
     <tr>
@@ -102,37 +83,3 @@ namespace VSAC;
         <td>A list of transformations made. Useful for debugging.</td>
     </tr>
 </table>
-
-<h4>Media queries and device targetting</h4>
-<p>By default most styles except for styles inside media queries will be
-    inlined. Media queries should only be used to target devices. For reference,
-    some useful media queries are:</p>
-Style tags with the "scoped" attribute will not be moved/inlined
-[if gte mso 9] conditional comments
-[if IEMobile 7]
-
-
-preserve will be preserved in the document 
-
-generic mobile
-@media only screen and (max-device-width: 480px)
-tablets
-@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
-
-
-
-        @media only screen and (-webkit-min-device-pixel-ratio: 2) {
-            /* Put your iPhone 4g styles in here */
-        }
-        /* Following Android targeting from:
-        http://developer.android.com/guide/webapps/targeting.html
-        http://pugetworks.com/2011/04/css-media-queries-for-targeting-different-mobile-devices/  */
-        @media only screen and (-webkit-device-pixel-ratio:.75){
-            /* Put CSS for low density (ldpi) Android layouts in here */
-        }
-        @media only screen and (-webkit-device-pixel-ratio:1){
-            /* Put CSS for medium density (mdpi) Android layouts in here */
-        }
-        @media only screen and (-webkit-device-pixel-ratio:1.5){
-            /* Put CSS for high density (hdpi) Android layouts in here */
-        }
