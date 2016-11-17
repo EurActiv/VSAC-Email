@@ -25,6 +25,7 @@ function email_tools_bootstrap()
     use_module('apikey');
     use_module('emailer');
     use_module('log');
+    use_module('shortener');
 }
 
 //----------------------------------------------------------------------------//

@@ -403,6 +403,7 @@ call_user_func(function () use ($styles_by_id, $style_attrs, $style_attr_transfo
 
 // closure to avoid stepping on variable names
 call_user_func(function () use ($styles) {
+    // mark elements that should have id or class attributes preserved
     foreach ($styles as $mq => $declarations) {
         foreach (array_keys($declarations) as $selector) {
             domtools_loop($selector, function ($el) {
@@ -412,6 +413,7 @@ call_user_func(function () use ($styles) {
             });
         }
     }
+    // remove superfluous id attributes
     domtools_loop('//*[@id]', function ($el) {
         $id = $el->getAttribute('id');
         $classes = array_filter(explode(' ', $el->getAttribute('class')));
@@ -420,6 +422,7 @@ call_user_func(function () use ($styles) {
             $el->removeAttribute('id');
         }
     });
+    // remove superfluous class attributes
     domtools_loop('//*[@class]', function ($el) {
         $classes = array_filter(explode(' ', $el->getAttribute('class')));
         $preserve = array_search('vsac-tmp-preserve', $classes);
@@ -430,14 +433,35 @@ call_user_func(function () use ($styles) {
             $el->setAttribute('class', implode(' ', $classes));
         }
     });
-    
+    // de-dupe and merge style attributes
     domtools_loop('//*[@style]', function ($el) {
         $style = $el->getAttribute('style');
         $style = csstoolsexp_parse_declaration_string($style);
         $style = csstoolsexp_declarations_join($style);
         $el->setAttribute('style', $style);    
     });
-    domtools_remove_elements('//comment()');
+    // shorten urls
+    domtools_loop('//a[@href]', function ($el) {
+        $href = $el->getAttribute('href');
+        if ($href
+            && filter_var($href, FILTER_VALIDATE_URL)
+            && preg_match('#^https?://#', $href)
+        ) {
+            $short = shortener_shorten($href);
+            if ($short && $short != $href) {
+                $el->setAttribute('href', $short);
+            }
+        }
+    });
+    // remove comments, except for conditional comments
+    domtools_loop('//comment()', function ($el) {
+        $content = $el->ownerDocument->saveXML($el);
+        $regex = '/^<\!\-\-\[[^\]]+\]>.*<\!\[ *endif *\]\-\->$/si';
+        if (!preg_match($regex, $content)) {
+            $el->parentNode->removeChild($el);
+        }
+    });
+    // remove scripts, don't need em.
     domtools_remove_elements('//script');
 });
 
